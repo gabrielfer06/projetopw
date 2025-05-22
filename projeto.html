@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Receitas Inteligentes</title>
+  <link rel="stylesheet" href="projeto.css" />
+</head>
+<body>
+  <header>
+    <h1>MenuMágico
+    </h1>
+    <p>Descubra receitas com os ingredientes que você tem no frigorífico</p>
+    <div class="auth-buttons">
+      <button id="btn-login">Login</button>
+      <button id="btn-register">Registrar</button>
+      <button id="toggle-dark-mode" aria-label="Alternar modo escuro">🌙 Modo Escuro</button>
+    </div>
+  </header>
+
+  <main>
+    <label for="ingredientes">Digite os ingredientes disponíveis:</label><br />
+    <input type="text" id="ingredientes" placeholder="ex: ovo, tomate, queijo" />
+    <button id="buscar-btn">Buscar Receitas</button>
+
+    <div id="results"></div>
+  </main>
+
+  <!-- Modal Login/Register -->
+  <div id="modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <button id="close-modal" class="close-modal" aria-label="Fechar modal">&times;</button>
+
+      <form id="login-form" class="auth-form active" aria-label="Formulário de Login">
+        <h2 id="modal-title">Login</h2>
+        <input type="email" id="login-email" placeholder="Email" required autocomplete="username"/>
+        <input type="password" id="login-password" placeholder="Senha" required autocomplete="current-password"/>
+        <button type="submit" class="submit-btn">Entrar</button>
+        <p id="login-error" class="error-msg"></p>
+        <p class="modal-switch">Não tem conta? <button type="button" id="switch-to-register" class="switch-btn">Registre-se</button></p>
+      </form>
+
+      <form id="register-form" class="auth-form" aria-label="Formulário de Registro" novalidate>
+        <h2>Registrar</h2>
+        <input type="text" id="register-name" placeholder="Nome" required autocomplete="name"/>
+        <input type="email" id="register-email" placeholder="Email" required autocomplete="email"/>
+        <input type="password" id="register-password" placeholder="Senha (mínimo 6 caracteres)" required autocomplete="new-password" minlength="6"/>
+        <button type="submit" class="submit-btn">Registrar</button>
+        <p id="register-error" class="error-msg"></p>
+        <p class="modal-switch">Já tem conta? <button type="button" id="switch-to-login" class="switch-btn">Login</button></p>
+      </form>
+    </div>
+  </div>
+
+  <script src="projeto.js"></script>
+</body>
+</html>
