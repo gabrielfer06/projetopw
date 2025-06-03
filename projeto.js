@@ -15,7 +15,7 @@ const loginError = document.getElementById('login-error');
 const registerError = document.getElementById('register-error');
 
 // API key Spoonacular (troca pela sua chave real)
-const API_KEY = '0c0544af7c614f418e1a722e01f22510';
+const API_KEY = '09b91db0b0694452900df23737e49200';
 
 // Abre modal no modo login ou register
 function openModal(mode = 'login') {
@@ -111,7 +111,7 @@ registerForm.addEventListener('submit', e => {
   }
 
   // Simulação de registro
-  alert(`Usuário ${name} registrado com sucesso!`);
+  alert(`Utilizador ${name} registado com sucesso!`);
   closeModal();
 });
 
@@ -169,12 +169,13 @@ async function buscarReceitas() {
       const receitaDiv = document.createElement('div');
       receitaDiv.classList.add('recipe');
 
+      // Aqui substituímos o link por botão que chama verDetalhesReceita
       receitaDiv.innerHTML = `
         <h3>${receita.title}</h3>
         <img src="${receita.image}" alt="Imagem da receita ${receita.title}" loading="lazy" />
         <p>Ingredientes usados: ${receita.usedIngredientCount}</p>
         <p>Ingredientes faltando: ${receita.missedIngredientCount}</p>
-        <a href="https://spoonacular.com/recipes/${encodeURIComponent(receita.title).replace(/%20/g, '-').toLowerCase()}-${receita.id}" target="_blank" rel="noopener noreferrer">Ver receita</a>
+        <button onclick="verDetalhesReceita(${receita.id})">Ver Receita</button>
       `;
 
       resultadosDiv.appendChild(receitaDiv);
@@ -182,6 +183,33 @@ async function buscarReceitas() {
 
   } catch (error) {
     resultadosDiv.innerHTML = `<p style="color:#e74c3c;">Erro ao buscar receitas: ${error.message}</p>`;
+  }
+}
+
+// Função para buscar detalhes da receita pela API e mostrar na página
+async function verDetalhesReceita(id) {
+  resultadosDiv.innerHTML = '<p>Carregando detalhes da receita...</p>';
+
+  try {
+    const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${API_KEY}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar detalhes: ${response.status}`);
+    }
+
+    const detalhes = await response.json();
+
+    resultadosDiv.innerHTML = `
+      <h2>${detalhes.title}</h2>
+      <img src="${detalhes.image}" alt="${detalhes.title}" loading="lazy" />
+      <p><strong>Resumo:</strong> ${detalhes.summary}</p>
+      <p><strong>Instruções:</strong> ${detalhes.instructions || 'Nenhuma instrução disponível.'}</p>
+      <button onclick="buscarReceitas()">🔙 Voltar</button>
+    `;
+
+  } catch (error) {
+    resultadosDiv.innerHTML = `<p style="color:#e74c3c;">Erro ao carregar detalhes da receita: ${error.message}</p>`;
   }
 }
 
