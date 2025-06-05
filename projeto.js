@@ -1,225 +1,185 @@
-// DOM Elements
-const btnLogin = document.getElementById('btn-login');
-const btnRegister = document.getElementById('btn-register');
-const btnToggleDarkMode = document.getElementById('toggle-dark-mode');
-const modal = document.getElementById('modal');
-const closeModalBtn = document.getElementById('close-modal');
-const loginForm = document.getElementById('login-form');
-const registerForm = document.getElementById('register-form');
-const switchToRegisterBtn = document.getElementById('switch-to-register');
-const switchToLoginBtn = document.getElementById('switch-to-login');
-const buscarBtn = document.getElementById('buscar-btn');
-const resultadosDiv = document.getElementById('results');
+const btnBuscar = document.getElementById('btnBuscar');
+const ingredientesInput = document.getElementById('ingredientes');
+const resultadosDiv = document.getElementById('resultados');
+const btnDarkMode = document.getElementById('btnDarkMode');
 
-const loginError = document.getElementById('login-error');
-const registerError = document.getElementById('register-error');
+const SPOONACULAR_API_KEY = '0c0544af7c614f418e1a722e01f22510';
+const OPENAI_API_KEY = 'TUA_CHAVE_OPENAI';
 
-// API key Spoonacular (troca pela sua chave real)
-const API_KEY = '09b91db0b0694452900df23737e49200';
+btnBuscar.addEventListener('click', async () => {
+  const ingredientes = ingredientesInput.value.trim();
+  if (!ingredientes) return alert('Por favor, introduz ingredientes.');
 
-// Abre modal no modo login ou register
-function openModal(mode = 'login') {
-  modal.classList.add('active');
-  modal.setAttribute('aria-hidden', 'false');
-  if (mode === 'login') {
-    loginForm.classList.add('active');
-    registerForm.classList.remove('active');
-  } else {
-    registerForm.classList.add('active');
-    loginForm.classList.remove('active');
-  }
-  clearErrors();
-  clearForms();
-}
-
-// Fecha modal
-function closeModal() {
-  modal.classList.remove('active');
-  modal.setAttribute('aria-hidden', 'true');
-  clearErrors();
-  clearForms();
-}
-
-// Limpa mensagens de erro
-function clearErrors() {
-  loginError.textContent = '';
-  registerError.textContent = '';
-}
-
-// Limpa inputs dos forms
-function clearForms() {
-  loginForm.reset();
-  registerForm.reset();
-}
-
-// Troca entre forms login/register
-switchToRegisterBtn.addEventListener('click', () => openModal('register'));
-switchToLoginBtn.addEventListener('click', () => openModal('login'));
-
-// Botões abrir modal login/register
-btnLogin.addEventListener('click', () => openModal('login'));
-btnRegister.addEventListener('click', () => openModal('register'));
-
-// Fecha modal ao clicar no "X"
-closeModalBtn.addEventListener('click', closeModal);
-
-// Fecha modal ao clicar fora do conteúdo
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) closeModal();
-});
-
-// Login submit (exemplo simulado)
-loginForm.addEventListener('submit', e => {
-  e.preventDefault();
-  clearErrors();
-
-  const email = loginForm['login-email'].value.trim();
-  const password = loginForm['login-password'].value.trim();
-
-  // Exemplo de validação simples
-  if (!email || !password) {
-    loginError.textContent = 'Preencha todos os campos.';
-    return;
-  }
-
-  // Simulação de login — aqui você faria fetch para backend
-  if (email === 'usuario@teste.com' && password === '123456') {
-    alert('Login efetuado com sucesso!');
-    closeModal();
-  } else {
-    loginError.textContent = 'Email ou senha inválidos.';
-  }
-});
-
-// Register submit (exemplo simulado)
-registerForm.addEventListener('submit', e => {
-  e.preventDefault();
-  clearErrors();
-
-  const name = registerForm['register-name'].value.trim();
-  const email = registerForm['register-email'].value.trim();
-  const password = registerForm['register-password'].value.trim();
-
-  if (!name || !email || !password) {
-    registerError.textContent = 'Preencha todos os campos.';
-    return;
-  }
-
-  if (password.length < 6) {
-    registerError.textContent = 'A senha deve ter pelo menos 6 caracteres.';
-    return;
-  }
-
-  // Simulação de registro
-  alert(`Utilizador ${name} registado com sucesso!`);
-  closeModal();
-});
-
-// Modo escuro persistente
-function setDarkMode(isDark) {
-  if (isDark) {
-    document.body.classList.add('dark-mode');
-    btnToggleDarkMode.textContent = '☀️ Modo Claro';
-  } else {
-    document.body.classList.remove('dark-mode');
-    btnToggleDarkMode.textContent = '🌙 Modo Escuro';
-  }
-  localStorage.setItem('darkMode', isDark);
-}
-
-btnToggleDarkMode.addEventListener('click', () => {
-  const isDark = document.body.classList.toggle('dark-mode');
-  setDarkMode(isDark);
-});
-
-// Ao carregar a página, verifica modo escuro salvo
-document.addEventListener('DOMContentLoaded', () => {
-  const darkModeStored = localStorage.getItem('darkMode') === 'true';
-  setDarkMode(darkModeStored);
-});
-
-// Função para buscar receitas da Spoonacular com os ingredientes
-async function buscarReceitas() {
-  resultadosDiv.innerHTML = '<p>Buscando receitas...</p>';
-  const ingredientes = document.getElementById('ingredientes').value.trim();
-
-  if (!ingredientes) {
-    resultadosDiv.innerHTML = '<p style="color:#e74c3c;">Por favor, digite pelo menos um ingrediente.</p>';
-    return;
-  }
+  resultadosDiv.innerHTML = '<p>A procurar receitas...</p>';
 
   try {
-    const url = `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(ingredientes)}&number=6&apiKey=${API_KEY}`;
-    const response = await fetch(url);
+    const receitas = await buscarReceitas(ingredientes);
+    resultadosDiv.innerHTML = '';
 
-    if (!response.ok) {
-      throw new Error(`Erro na requisição: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.length === 0) {
-      resultadosDiv.innerHTML = '<p>Nenhuma receita encontrada para esses ingredientes.</p>';
+    if (receitas.length === 0) {
+      resultadosDiv.innerHTML = '<p>Nenhuma receita encontrada para os ingredientes fornecidos.</p>';
       return;
     }
 
-    // Monta cards das receitas
-    resultadosDiv.innerHTML = '';
-    data.forEach(receita => {
-      const receitaDiv = document.createElement('div');
-      receitaDiv.classList.add('recipe');
-
-      // Aqui substituímos o link por botão que chama verDetalhesReceita
-      receitaDiv.innerHTML = `
-        <h3>${receita.title}</h3>
-        <img src="${receita.image}" alt="Imagem da receita ${receita.title}" loading="lazy" />
-        <p>Ingredientes usados: ${receita.usedIngredientCount}</p>
-        <p>Ingredientes faltando: ${receita.missedIngredientCount}</p>
-        <button onclick="verDetalhesReceita(${receita.id})">Ver Receita</button>
-      `;
-
-      resultadosDiv.appendChild(receitaDiv);
-    });
-
-  } catch (error) {
-    resultadosDiv.innerHTML = `<p style="color:#e74c3c;">Erro ao buscar receitas: ${error.message}</p>`;
-  }
-}
-
-// Função para buscar detalhes da receita pela API e mostrar na página
-async function verDetalhesReceita(id) {
-  resultadosDiv.innerHTML = '<p>Carregando detalhes da receita...</p>';
-
-  try {
-    const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${API_KEY}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar detalhes: ${response.status}`);
+    for (const receita of receitas) {
+      const descricaoTraduzida = await traduzirDescricao(receita.title);
+      mostrarReceita(receita, descricaoTraduzida);
     }
-
-    const detalhes = await response.json();
-
-    resultadosDiv.innerHTML = `
-      <h2>${detalhes.title}</h2>
-      <img src="${detalhes.image}" alt="${detalhes.title}" loading="lazy" />
-      <p><strong>Resumo:</strong> ${detalhes.summary}</p>
-      <p><strong>Instruções:</strong> ${detalhes.instructions || 'Nenhuma instrução disponível.'}</p>
-      <button onclick="buscarReceitas()">🔙 Voltar</button>
-    `;
-
-  } catch (error) {
-    resultadosDiv.innerHTML = `<p style="color:#e74c3c;">Erro ao carregar detalhes da receita: ${error.message}</p>`;
-  }
-}
-
-// Evento no botão buscar
-buscarBtn.addEventListener('click', buscarReceitas);
-
-// Também permite buscar ao apertar Enter no input ingredientes
-document.getElementById('ingredientes').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    buscarReceitas();
+  } catch (erro) {
+    console.error('Erro ao obter receitas:', erro);
+    resultadosDiv.innerHTML = '<p>Erro ao procurar receitas. Verifica a tua ligação ou chave de API.</p>';
   }
 });
+
+async function buscarReceitas(ingredientes) {
+  const url = `https://api.spoonacular.com/recipes/complexSearch?includeIngredients=${encodeURIComponent(ingredientes)}&number=6&addRecipeInformation=true&apiKey=${SPOONACULAR_API_KEY}`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.results || [];
+}
+
+async function traduzirDescricao(texto) {
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "Traduza para português de Portugal de forma informal e natural."
+          },
+          {
+            role: "user",
+            content: `Traduza este nome de receita: ${texto}`
+          }
+        ]
+      })
+    });
+
+    const data = await res.json();
+    return data.choices[0].message.content.trim();
+  } catch (erro) {
+    console.error("Erro na tradução:", erro);
+    return texto; // Se falhar, usa o título original
+  }
+}
+
+// NOVO: Função para buscar detalhes completos da receita incluindo instruções
+async function buscarDetalhesReceita(id) {
+  const url = `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&apiKey=${SPOONACULAR_API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Erro ao buscar detalhes da receita");
+  return await res.json();
+}
+
+function mostrarReceita(receita, descricaoTraduzida) {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  // Estrutura básica da receita
+  card.innerHTML = `
+    <img src="${receita.image}" alt="${receita.title}" />
+    <div class="card-content">
+      <h3>${descricaoTraduzida}</h3>
+      <p><strong>Pronto em:</strong> ${receita.readyInMinutes} min</p>
+      <button class="btn-instrucoes" data-id="${receita.id}">Ver Instruções</button>
+      <div class="instrucoes" style="display:none; margin-top:10px;"></div>
+    </div>
+  `;
+
+  resultadosDiv.appendChild(card);
+
+  // Evento para mostrar/ocultar instruções
+  const btnInstrucoes = card.querySelector('.btn-instrucoes');
+  const divInstrucoes = card.querySelector('.instrucoes');
+
+  btnInstrucoes.addEventListener('click', async () => {
+    if (divInstrucoes.style.display === 'block') {
+      // Se estiver visível, esconde
+      divInstrucoes.style.display = 'none';
+      btnInstrucoes.textContent = 'Ver Instruções';
+    } else {
+      // Se estiver escondido, carrega e mostra
+      btnInstrucoes.textContent = 'A carregar...';
+
+      try {
+        const detalhes = await buscarDetalhesReceita(receita.id);
+        // Usa as instruções em texto limpo
+        const instrucaoTexto = detalhes.instructions ? detalhes.instructions.replace(/<\/?[^>]+(>|$)/g, "") : "Instruções não disponíveis.";
+        divInstrucoes.textContent = instrucaoTexto;
+        divInstrucoes.style.display = 'block';
+        btnInstrucoes.textContent = 'Esconder Instruções';
+      } catch (erro) {
+        divInstrucoes.textContent = 'Erro ao carregar as instruções.';
+        divInstrucoes.style.display = 'block';
+        btnInstrucoes.textContent = 'Ver Instruções';
+      }
+    }
+  });
+}
+
+btnDarkMode.addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+});
+
+async function buscarReceitas(ingredientes) {
+  // Usamos o findByIngredients para obter a contagem de ingredientes em falta
+  const url = `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(ingredientes)}&number=6&apiKey=${SPOONACULAR_API_KEY}`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+  return data || [];
+}
+
+function mostrarReceita(receita, descricaoTraduzida) {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  card.innerHTML = `
+    <img src="${receita.image}" alt="${receita.title}" />
+    <div class="card-content">
+      <h3>${descricaoTraduzida}</h3>
+      <p><strong>Ingredientes em falta:</strong> ${receita.missedIngredientCount}</p>
+      <p><strong>Pronto em:</strong> -- min (necessita fetch de detalhes)</p>
+      <button class="btn-instrucoes" data-id="${receita.id}">Ver Instruções</button>
+      <div class="instrucoes" style="display:none; margin-top:10px;"></div>
+    </div>
+  `;
+
+  resultadosDiv.appendChild(card);
+
+  const btnInstrucoes = card.querySelector('.btn-instrucoes');
+  const divInstrucoes = card.querySelector('.instrucoes');
+
+  btnInstrucoes.addEventListener('click', async () => {
+    if (divInstrucoes.style.display === 'block') {
+      divInstrucoes.style.display = 'none';
+      btnInstrucoes.textContent = 'Ver Instruções';
+    } else {
+      btnInstrucoes.textContent = 'A carregar...';
+
+      try {
+        const detalhes = await buscarDetalhesReceita(receita.id);
+        const instrucaoTexto = detalhes.instructions ? detalhes.instructions.replace(/<\/?[^>]+(>|$)/g, "") : "Instruções não disponíveis.";
+        divInstrucoes.textContent = instrucaoTexto;
+
+        // Atualizar pronto em minutos agora que temos os detalhes
+        const prontoEmP = card.querySelector('.card-content p:nth-child(3)');
+        if (prontoEmP) prontoEmP.textContent = `Pronto em: ${detalhes.readyInMinutes} min`;
+
+        divInstrucoes.style.display = 'block';
+        btnInstrucoes.textContent = 'Esconder Instruções';
+      } catch (erro) {
+        divInstrucoes.textContent = 'Erro ao carregar as instruções.';
+        divInstrucoes.style.display = 'block';
+        btnInstrucoes.textContent = 'Ver Instruções';
+      }
+    }
+  });
+}
